@@ -176,4 +176,18 @@ public class UserService implements CommunityConstant {
         String content = templateEngine.process("/mail/forget", context);
         mailClient.sendMail(email, "忘记密码", content);
     }
+
+    public LoginTicket findLoginTicket(String ticket){
+        return loginTicketMapper.selectByTicket(ticket);
+    }
+
+    public int updateHeader(int userId, String headerUrl){
+        return userMapper.updateHeader(userId, headerUrl);
+    }
+
+    public int updatePassword(int userId, String password){
+        User user = userMapper.selectById(userId);
+        return userMapper.updatePassword(user.getId(),
+                CommunityUtil.md5(password+user.getSalt()));
+    }
 }
