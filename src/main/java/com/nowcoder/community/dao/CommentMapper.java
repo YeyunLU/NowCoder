@@ -10,7 +10,11 @@ public interface CommentMapper {
 
     List<Comment> selectCommentByEntity(int entityType, int entityId, int offset, int limit);
 
+    List<Comment> selectCommentByUser(int userId, int entityType, int offset, int limit);
+
     int selectCountByEntity(int entityType, int entityId);
+
+    int selectCountByUser(int entityType, int userId);
 
     int insertComment(Comment comment);
 

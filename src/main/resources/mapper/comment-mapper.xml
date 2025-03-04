@@ -18,12 +18,32 @@
             order by create_time asc
             limit #{offset}, #{limit}
         </select>
+        <select id="selectCommentByUser" resultType="Comment">
+            select <include refid="selectFields"></include>
+            from comment
+            where status = 0
+            and user_id = #{userId}
+            <if test="entityType!=0">
+                and entity_type = #{entityType}
+            </if>
+            order by create_time asc
+            limit #{offset}, #{limit}
+        </select>
         <select id="selectCountByEntity" resultType="int">
             select count(id)
             from comment
             where status = 0
             and entity_type = #{entityType}
             and entity_id = #{entityId}
+        </select>
+        <select id="selectCountByUser" resultType="int">
+            select count(id)
+            from comment
+            where status = 0
+            and user_id = #{userId}
+            <if test="entityType!=0">
+                and entity_type = #{entityType}
+            </if>
         </select>
         <insert id="insertComment" parameterType="Comment">
             insert into comment(<include refid="insertFields"></include>)

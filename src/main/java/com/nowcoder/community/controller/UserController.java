@@ -1,13 +1,15 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
+import com.nowcoder.community.entity.Comment;
+import com.nowcoder.community.entity.DiscussPost;
+import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
-import com.nowcoder.community.service.FollowService;
-import com.nowcoder.community.service.LikeService;
-import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.service.*;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,6 +28,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/user")
@@ -50,6 +56,12 @@ public class UserController implements CommunityConstant {
 
     @Autowired
     private FollowService followService;
+
+    @Autowired
+    private DiscussPostService discussPostService;
+
+    @Autowired
+    private CommentService commentService;
 
     @Autowired
     private HostHolder hostHolder;
@@ -164,7 +176,74 @@ public class UserController implements CommunityConstant {
             hasFollowed = followService.hasFollowed(hostHolder.getUser().getId(), ENTITY_TYPE_USER, userId);
         }
         model.addAttribute("hasFollowed", hasFollowed);
+        model.addAttribute("tabOption", 0);
 
         return "/site/profile";
+    }
+
+    @RequestMapping(path="/profile/posts/{userId}", method = RequestMethod.GET)
+    public String getUserPosts(@PathVariable("userId") int userId, Page page, Model model){
+        User user = userService.findUserById(userId);
+        if(user==null) {
+            throw new RuntimeException("用户不存在");
+        }
+        model.addAttribute("user", user);
+
+        page.setLimit(5);
+        page.setPath("/user/profile/posts/" + userId);
+        int count = discussPostService.findDiscussPostRows(userId);
+        page.setRows(count);
+        model.addAttribute("count", count);
+
+        List<DiscussPost> posts = discussPostService.findDiscussPosts(
+                userId, page.getOffset(), page.getLimit());
+        List<Map<String, Object>> postList = new ArrayList<>();
+        if(posts!=null){
+            for(DiscussPost post : posts){
+                Map<String, Object> map = new HashMap<>();
+                map.put("post", post);
+                long likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId());
+                map.put("likeCount", likeCount);
+                postList.add(map);
+            }
+        }
+
+        model.addAttribute("posts", postList);
+        model.addAttribute("tabOption", 1);
+
+        return "/site/my-post";
+    }
+
+    @RequestMapping(path="/profile/replies/{userId}", method = RequestMethod.GET)
+    public String getUserReplies(@PathVariable("userId") int userId, Page page, Model model){
+        User user = userService.findUserById(userId);
+        if(user==null) {
+            throw new RuntimeException("用户不存在");
+        }
+        model.addAttribute("user", user);
+
+        page.setLimit(5);
+        page.setPath("/user/profile/replies/" + userId);
+        int count = commentService.findCommentCountByUser(ENTITY_TYPE_POST ,userId);
+        page.setRows(count);
+        model.addAttribute("count", count);
+
+        List<Comment> replies = commentService.findCommentsByUser(
+                userId, ENTITY_TYPE_POST, page.getOffset(), page.getLimit());
+        List<Map<String, Object>> replyList = new ArrayList<>();
+        if(replies!=null){
+            for(Comment reply : replies){
+                Map<String, Object> map = new HashMap<>();
+                int postId = reply.getEntityId();
+                DiscussPost post = discussPostService.findDiscussPostById(postId);
+                map.put("reply", reply);
+                map.put("post", post);
+                replyList.add(map);
+            }
+        }
+        model.addAttribute("replies", replyList);
+        model.addAttribute("tabOption", 2);
+
+        return "/site/my-reply";
     }
 }
