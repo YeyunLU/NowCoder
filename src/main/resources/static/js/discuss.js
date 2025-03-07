@@ -5,7 +5,7 @@ function like(btn, entityType, entityId, entityUserId, postId) {
             "entityType": entityType,
             "entityId": entityId,
             "entityUserId": entityUserId,
-            "post": postId
+            "postId": postId
         },
         function(data){
             data = $.parseJSON(data);
